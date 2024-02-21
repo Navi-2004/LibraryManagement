@@ -7,11 +7,13 @@ require ("dotenv").config();
 
 // Create an Express application
 const app = express();   
-const allowedOrigin = 'https://librarymanagement-cq3k.onrender.com';
-app.use(cors({
-  origin: allowedOrigin
-}));
 
+
+const corsOptions = {
+  origin: 'https://library-management-rust-eta.vercel.app',
+};
+
+app.use(cors(corsOptions));  
 // Middleware to parse JSON bodies
 app.use(express.json());
 
@@ -52,7 +54,7 @@ app.post('/books', async (req, res) => {
   );
 });
 
-app.get('/books', async(req, res) => {
+app.get('/books', async(req, res) => {  
     const query = 'SELECT * FROM library';
     db.query(query, (err, results) => {
       if (err) {
