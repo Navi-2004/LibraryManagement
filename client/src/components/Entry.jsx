@@ -1,7 +1,7 @@
 // EntryPage.js
 
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 
 const EntryPage = () => {
   const [formData, setFormData] = useState({
@@ -22,7 +22,7 @@ const EntryPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/books', formData); // Assuming your backend API endpoint is '/api/books' for inserting books
+      await axios.post('/books', formData); // Assuming your backend API endpoint is '/api/books' for inserting books
       alert('Book information added successfully!');
     } catch (error) {
       console.error('Error adding book:', error);

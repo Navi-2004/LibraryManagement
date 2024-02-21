@@ -1,6 +1,6 @@
 // RegistrationForm.js
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom'; 
 
@@ -19,7 +19,7 @@ const UserRegister = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/register', formData); // Assuming your backend API endpoint for registration is '/api/register'
+      const response = await axios.post('/register', formData); // Assuming your backend API endpoint for registration is '/api/register'
       console.log('Registration successful:', response.data);
       alert('Registration successful!');
       navigate('/login')

@@ -1,6 +1,6 @@
 // LoginForm.js
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';// Import useNavigate from react-router-dom
 
@@ -18,7 +18,7 @@ const UserLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/login', formData);
+      const response = await axios.post('/login', formData);
       console.log('Login successful:', response.data);
       alert(response.data.user.id)
       localStorage.setItem("id",response.data.user.id);

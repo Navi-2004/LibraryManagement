@@ -1,28 +1,25 @@
-// Import necessary modules
-// import { executeQuery} from './db';
 const express = require('express');
-const mysql = require('mysql');
 const cors = require('cors');
-require ("dotenv").config();
+const mysql = require('mysql');
+const fs = require('fs'); // Adding fs module requirement
 
-// Create an Express application
-const app = express();   
+require('dotenv').config();
 
+const app = express();
+const PORT = process.env.PORT || 5000;
 
-const corsOptions = {
-  origin: 'https://library-management-rust-eta.vercel.app',
-};
-
-app.use(cors(corsOptions));  
-// Middleware to parse JSON bodies
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// // Define MySQL database connection
+// Define MySQL database connection
 const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '',    
-  database: 'LibraryManagement'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: 3306,
+  ssl: { ca: fs.readFileSync('./DigiCertGlobalRootCA.crt.pem') }
 });
 
 // Connect to MySQL
@@ -34,92 +31,75 @@ db.connect((err) => {
   console.log('Connected to MySQL database');
 });
 
-// Define a route for inserting a new book
-app.post('/books', async (req, res) => {
+// Route to add a new book
+app.post('/books', (req, res) => {
   const { title, author, subject, publish_date, copies, floor_no, shelf_no } = req.body;
-
-  // Insert book information into the database
-   await executeQuery(
-    'INSERT INTO library (title, author, subject, publish_date, copies, floor_no, shelf_no) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [title, author, subject, publish_date, copies, floor_no, shelf_no],
-    (err, result) => {
-      if (err) {
-        console.error('Error inserting book:', err);
-        res.status(500).json({ error: 'Failed to add book information' });
-        return;
-      }
-      // Send success response
-      res.status(201).json({ message: 'Book information added successfully', bookId: result.insertId });
+  const query = 'INSERT INTO library (title, author, subject, publish_date, copies, floor_no, shelf_no) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  db.query(query, [title, author, subject, publish_date, copies, floor_no, shelf_no], (error, results) => {
+    if (error) {
+      console.error('Error adding book:', error);
+      res.status(500).json({ error: 'Failed to add book information' });
+    } else {
+      res.status(201).json({ message: 'Book information added successfully' });
     }
-  );
+  });
 });
 
-app.get('/books', async(req, res) => {  
-    const query = 'SELECT * FROM library';
-    db.query(query, (err, results) => {
-      if (err) {
-        console.error('Error fetching books from database:', err);
-        res.status(500).json({ error: 'Failed to fetch books' });
-        return;
-      }
+// Route to fetch all books
+app.get('/books', (req, res) => {
+  const query = 'SELECT * FROM library';
+  db.query(query, (error, results) => {
+    if (error) {
+      console.error('Error fetching books:', error);
+      res.status(500).json({ error: 'Failed to fetch books' });
+    } else {
       res.json(results);
-    });
+    }
   });
+});
 
-
-  app.post('/register', (req, res) => {
-    const { username, email, password } = req.body;
-    console.log(username);
-  
-    // Check if user already exists
-    db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], (err, results) => {
-      if (err) {
-        return res.status(500).json({ message: 'Internal server error' });
-      }
-  
-      if (results.length > 0) {
-        return res.status(400).json({ message: 'User already exists' });
-      }
-  
-      // Insert new user into the database
-      db.query('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', [username, email, password], (err, result) => {
-        if (err) {
-          return res.status(500).json({ message: 'Internal server error' });
+// Route to register a new user
+app.post('/register', (req, res) => {
+  const { username, email, password } = req.body;
+  const checkExistingQuery = 'SELECT * FROM users WHERE username = ? OR email = ?';
+  db.query(checkExistingQuery, [username, email], (error, results) => {
+    if (error) {
+      console.error('Error checking existing user:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else if (results.length > 0) {
+      res.status(400).json({ message: 'User already exists' });
+    } else {
+      const insertUserQuery = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
+      db.query(insertUserQuery, [username, email, password], (error) => {
+        if (error) {
+          console.error('Error registering user:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        } else {
+          res.status(201).json({ message: 'User registered successfully' });
         }
-        return res.status(201).json({ message: 'User registered successfully' });
       });
-    });
+    }
   });
-  
-  app.post('/login', (req, res) => {
-    const { usernameOrEmail, password } = req.body;
-  
-    // Check if username or email exists in the database
-    db.query('SELECT * FROM users WHERE username = ? OR email = ?', [usernameOrEmail, usernameOrEmail], (err, results) => {
-      if (err) {
-        return res.status(500).json({ message: 'Internal server error' });
-      }
-  
-      if (results.length === 0) {
-        return res.status(401).json({ message: 'Invalid username/email or password' });
-      }
-  
+});
+
+// Route to handle user login
+app.post('/login', (req, res) => {
+  const { usernameOrEmail, password } = req.body;
+  const query = 'SELECT * FROM users WHERE username = ? OR email = ?';
+  db.query(query, [usernameOrEmail, usernameOrEmail], (error, results) => {
+    if (error) {
+      console.error('Error logging in:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } else if (results.length === 0 || results[0].password !== password) {
+      res.status(401).json({ message: 'Invalid username/email or password' });
+    } else {
       const user = results[0];
-  
-      // Compare password (without bcrypt)
-      if (password !== user.password) {
-        return res.status(401).json({ message: 'Invalid username/email or password' });
-      }
-  
-      // If login is successful, return success message and user details
       res.status(200).json({ message: 'Login successful', user: { id: user.id, username: user.username, email: user.email } });
-    });
+    }
   });
-  
-// Define port
-const PORT = process.env.PORT || 5000;
+});
 
 // Start the server
-app.listen(5000, () => {
+app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

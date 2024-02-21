@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../axiosConfig';
 
 const Book = () => {
   const [books, setBooks] = useState([]);
@@ -14,7 +14,11 @@ const Book = () => {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/books'); // Assuming your backend server is running on port 5000
+        console.log('Fetching books');
+        const response = await axios.get('/books');
+        console.log('Fetched');
+        console.log(response.data); // Assuming your backend server is running on port 5000
+        // Assuming your backend server is running on port 5000
         setBooks(response.data);
       } catch (error) {
         console.error('Error fetching books:', error);
@@ -25,15 +29,24 @@ const Book = () => {
   }, []);
 
   const handleSeeMore = () => {
-    setVisibleBooks((prevVisibleBooks) => prevVisibleBooks + 12); // Increase visible books by 12
+    setVisibleBooks(prevVisibleBooks => prevVisibleBooks + 12); // Increase visible books by 12
   };
 
-  const handleFilterChange = (event) => {
+  const handleFilterChange = event => {
     const { name, value } = event.target;
     setFilters({ ...filters, [name]: value });
   };
 
-  const filteredBooks = books.filter((book) => {
+  const [buttonTexts, setButtonTexts] = useState({});
+
+  const handleButtonClick = bookId => {
+    setButtonTexts(prevState => ({
+      ...prevState,
+      [bookId]: prevState[bookId] === 'Read' ? 'Completed' : 'Read'
+    }));
+  };
+
+  const filteredBooks = books.filter(book => {
     return (
       book.title.toLowerCase().includes(filters.title.toLowerCase()) &&
       book.author.toLowerCase().includes(filters.author.toLowerCase()) &&
@@ -77,8 +90,20 @@ const Book = () => {
       </div>
       <p>Total Books: {filteredBooks.length}</p> {/* Display the count of filtered books */}
       <div className="books-grid">
-        {filteredBooks.slice(0, visibleBooks).map((book) => ( // Only display visibleBooks number of books
-          <div className="book" key={book.library_id}>
+        {filteredBooks.slice(0, visibleBooks).map(book => (
+          // Only display visibleBooks number of books
+          <div
+            className="book"
+            key={book.library_id}
+            style={{
+              backgroundColor:
+                buttonTexts[book.library_id] === 'Read'
+                  ? 'yellow'
+                  : buttonTexts[book.library_id] === 'Completed'
+                  ? 'lightgreen'
+                  : 'white'
+            }}
+          >
             <div className="book-details">
               <h3>{book.title}</h3>
               <p>Author: {book.author}</p>
@@ -88,10 +113,16 @@ const Book = () => {
               <p>Floor No: {book.floor_no}</p>
               <p>Shelf No: {book.shelf_no}</p>
             </div>
+            <div className="book-status">
+              <button onClick={() => handleButtonClick(book.library_id)}>
+                {buttonTexts[book.library_id] || 'Want to Read'}
+              </button>
+            </div>
           </div>
         ))}
       </div>
-      {visibleBooks < filteredBooks.length && ( // Show "See More" button if there are more books to display
+      {visibleBooks < filteredBooks.length && (
+        // Show "See More" button if there are more books to display
         <button onClick={handleSeeMore}>See More</button>
       )}
     </div>
