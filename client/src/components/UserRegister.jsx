@@ -19,7 +19,7 @@ const UserRegister = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/register', formData); // Assuming your backend API endpoint for registration is '/api/register'
+      const response = await axios.post('https://librarymanagement-cq3k.onrender.com/register', formData); // Assuming your backend API endpoint for registration is '/api/register'
       console.log('Registration successful:', response.data);
       alert('Registration successful!');
       navigate('/login')

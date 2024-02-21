@@ -7,8 +7,10 @@ require ("dotenv").config();
 
 // Create an Express application
 const app = express();   
-app.use(cors());
-app.use
+const allowedOrigin = 'https://librarymanagement-cq3k.onrender.com';
+app.use(cors({
+  origin: allowedOrigin
+}));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
