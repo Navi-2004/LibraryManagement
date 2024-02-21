@@ -1,16 +1,19 @@
 // Import necessary modules
+// import { executeQuery} from './db';
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
+require ("dotenv").config();
 
 // Create an Express application
-const app = express();
+const app = express();   
 app.use(cors());
+app.use
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-// Define MySQL database connection
+// // Define MySQL database connection
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -28,11 +31,11 @@ db.connect((err) => {
 });
 
 // Define a route for inserting a new book
-app.post('/books', (req, res) => {
+app.post('/books', async (req, res) => {
   const { title, author, subject, publish_date, copies, floor_no, shelf_no } = req.body;
 
   // Insert book information into the database
-  db.query(
+   await executeQuery(
     'INSERT INTO library (title, author, subject, publish_date, copies, floor_no, shelf_no) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [title, author, subject, publish_date, copies, floor_no, shelf_no],
     (err, result) => {
@@ -47,7 +50,7 @@ app.post('/books', (req, res) => {
   );
 });
 
-app.get('/books', (req, res) => {
+app.get('/books', async(req, res) => {
     const query = 'SELECT * FROM library';
     db.query(query, (err, results) => {
       if (err) {
